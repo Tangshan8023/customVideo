@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自定义播放器</title>
+    <style>
+        *{
+            padding: 0px;
+            margin: 0px;
+        }
+        html,body{
+            height: 100%;
+        }
+        #warp{
+            width: 100%;
+            height: 100%;
+            background-color: #383838;
+            text-align: center;
+        }
+        #myVideo{
+            vertical-align: middle;
+        }
+        #footer{
+            background-color: #2A2A2A;
+            width: 100%;
+            height: 30px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #isPlay{
+            width: 20px;
+            height: 20px;
+            background-image: url("./img/icon.png");
+            background-repeat: no-repeat;
+            background-position: 3px -32px;
+            background-size: 18px 122px;
+            margin-left: 15px;
+            cursor: pointer;
+        }
+        #stop{
+            width: 20px;
+            height: 20px;
+            background-image: url("./img/icon.png");
+            background-repeat: no-repeat;
+            background-position: 3px 3px;
+            background-size: 18px 122px;
+            cursor: pointer;
+        }
+        #playBar0{
+            width: 1000px;
+            height: 20px;
+            position: relative;
+            margin-left: -10px;
+        }
+        #play0{
+            width: 1000px;
+            height: 6px;
+            background-color: #737373;
+            margin-top: 7px;
+        }
+        #play2{
+            width: 0px;
+            height: 6px;
+            background-color: deeppink;
+        }
+        #play1{
+            width: 16px;
+            height: 10px;
+            background-color: #ffffff;
+            position: absolute;
+            top: 5px;
+            left: 0px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #times{
+            width: 160px;
+            height: 20px;
+            line-height: 20px;
+            color: #ffffff;
+        }
+        #times>span{
+            font-size: 16px;
+            text-align: center;
+        }
+        #sound{
+            width: 20px;
+            height: 20px;
+            background-image: url("./img/icon.png");
+            background-repeat: no-repeat;
+            background-position: 3px -50px;
+            background-size: 18px 122px;
+            cursor: pointer;
+        }
+        #playBar1{
+            width: 70px;
+            height: 20px;
+            position: relative;
+            margin-left: -14px;
+        }
+        #bar0{
+            width: 70px;
+            height: 4px;
+            background-color: #737373;
+            margin-top: 8px;
+        }
+        #bar1{
+            width: 0px;
+            height: 4px;
+            background-color: deeppink;
+        }
+        #bar2{
+            width: 8px;
+            height: 6px;
+            background-color: white;
+            position: absolute;
+            top: 7px;
+            left: 0px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #screen{
+            width: 20px;
+            height: 20px;
+            background-image: url("./img/icon.png");
+            background-repeat: no-repeat;
+            background-position: 1px -87px;
+            background-size: 18px 122px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="warp">
+    <video id="myVideo" src="https://www.runoob.com/try/demo_source/mov_bbb.mp4" poster="./img/img.jpg"></video>
+    <footer id="footer">
+        <!--播放暂停-->
+        <div id="isPlay"></div>
+        <!--停止-->
+        <div id="stop"></div>
+        <!--播放进度条-->
+        <div id="playBar0">
+            <div id="play0">
+                <div id="play2"></div>
+            </div>
+            <div id="play1"></div>
+        </div>
+        <!--当前时间/总时间-->
+        <div id="times">
+            <span class="now">00:00:00</span>/
+            <span class="all">00:00:00</span>
+        </div>
+        <!--声音-->
+        <div id="sound"></div>
+        <!--声音进度条-->
+        <div id="playBar1">
+            <div id="bar0">
+                <div id="bar1"></div>
+            </div>
+            <div id="bar2"></div>
+        </div>
+        <!--全屏控制-->
+        <div id="screen"></div>
+    </footer>
+</div>
+<script>
+    window.onload = function () {
+        var myVideo = document.getElementById("myVideo");
+        var footer = document.getElementById("footer");
+        var isPlay = document.getElementById("isPlay");
+        var stop = document.getElementById("stop");
+        var play0 = document.getElementById("play0");
+        var allT = document.getElementsByClassName("all")[0];
+        var nowT = document.getElementsByClassName("now")[0];
+        var play2 = document.getElementById("play2");
+        var playBar0 = document.getElementById("playBar0");
+        var play1 = document.getElementById("play1");
+        var sound = document.getElementById("sound");
+        var playBar1 = document.getElementById("playBar1");
+        var bar0 = document.getElementById("bar0");
+        var bar1 = document.getElementById("bar1");
+        var bar2 = document.getElementById("bar2");
+        var screen = document.getElementById("screen");
+        var dates = null;
+        var scales = 0;
+        var mus = true;
+        var screenQ = false;
+        myVideo.width = document.documentElement.clientWidth;
+        myVideo.height = document.documentElement.clientHeight - footer.clientHeight;
+        // 监听DOM窗口的变化
+        window.onresize = function () {
+            myVideo.width = document.documentElement.clientWidth;
+            myVideo.height = document.documentElement.clientHeight - footer.clientHeight;
+        };
+
+        /*
+        * 暂停/播放
+        * */
+        isPlay.onclick = function () {
+            /*
+            * paused 返回/设置视频是否播放，值为布尔值
+            * */
+            var isS = myVideo.paused;
+            if(isS){
+                myVideo.play();
+                isPlay.style.backgroundPosition = "3px -13px";
+                hovrs();
+            }else{
+                myVideo.pause();
+                isPlay.style.backgroundPosition = "3px -32px";
+                clearInterval(dates)
+            }
+        };
+        /*
+        * loadedmetadata 当浏览器已经加载完数据
+        * */
+        myVideo.onloadedmetadata = function () {
+            allT.innerHTML = formatTimes(myVideo.duration);
+            myVideo.volume = 0.5;
+            console.log(myVideo.volume);
+            var scaleS = myVideo.volume/1;
+            console.log(scaleS);
+            bar2.style.left = bar1.style.width = scaleS*playBar1.offsetWidth + "px";
+        };
+        /*
+        * 进度条设置
+        * */
+        function hovrs() {
+            dates = setInterval(function () {
+                scales = myVideo.currentTime/myVideo.duration;
+                play2.style.width = scales*play0.clientWidth+"px";
+                play1.style.left = scales*play0.clientWidth+"px";
+                nowT.innerHTML = formatTimes(myVideo.currentTime);
+            }, 60)
+        }
+        /*
+        * 视频播放完触发时间onended
+        * */
+        myVideo.onended = function () {
+            isPlay.style.backgroundPosition = "3px -32px";
+            nowT.innerHTML = formatTimes(myVideo.currentTime);
+            myVideo.pause();
+            clearInterval(dates);
+        };
+        /*
+        * 停止播放
+        * */
+        stop.onclick = function () {
+            myVideo.pause();
+            myVideo.currentTime = 0;
+            nowT.innerHTML = formatTimes(myVideo.currentTime);
+            play2.style.width = "0px";
+            play1.style.left = "0px";
+            isPlay.style.backgroundPosition = "3px -32px";
+            clearInterval(dates);
+        };
+        /*
+        * 拖动滚动条
+        * */
+        var point={};
+        play1.addEventListener("mousedown",mouseHandler);
+        function mouseHandler(e) {
+
+            if(e.type==="mousedown"){
+                point.x = playBar0.getBoundingClientRect().left;
+                document.addEventListener("mouseup",mouseHandler);
+                document.addEventListener("mousemove",mouseHandler);
+
+            }else if(e.type === "mouseup"){
+                document.removeEventListener("mouseup",mouseHandler);
+                document.removeEventListener("mousemove",mouseHandler);
+
+            }else if(e.type==="mousemove"){
+
+                var endX = e.clientX - point.x - play1.offsetWidth/2;
+                if(endX<=0){
+                    endX = 0;
+                }
+                if(endX>=(playBar0.offsetWidth-play1.offsetWidth)){
+                    endX = playBar0.offsetWidth-play1.offsetWidth;
+                }
+                var scaleX = (endX+play1.offsetWidth)/playBar0.offsetWidth;
+                play2.style.width = scaleX*playBar0.offsetWidth + "px";
+                myVideo.currentTime = scaleX*myVideo.duration;
+                nowT.innerHTML = formatTimes(scaleX*myVideo.duration);
+                play1.style.left = endX+"px";
+            }
+            e.preventDefault();
+        }
+        /*
+        * 进度条点击跳转
+        * */
+        play0.addEventListener("click", function (e) {
+            var endX = e.clientX - playBar0.getBoundingClientRect().left;
+            play1.style.left = endX-play1.offsetWidth/2 + "px";
+            play2.style.width = endX + "px";
+            var scaleX = play2.offsetWidth/playBar0.offsetWidth;
+            myVideo.currentTime = scaleX*myVideo.duration;
+            nowT.innerHTML = formatTimes(scaleX*myVideo.duration);
+        });
+        /*
+        * 声音是否静音
+        * */
+        sound.addEventListener("click", function () {
+            mus = !mus;
+            if(mus){
+                myVideo.muted = !mus;
+                sound.style.backgroundPosition = "3px -50px";
+            } else {
+                myVideo.muted = !mus;
+                sound.style.backgroundPosition = "1px -69px";
+            }
+        });
+        /*
+        * 声音进度条
+        * */
+        var origin = {};
+        bar2.addEventListener("mousedown", mouseHand);
+        function mouseHand(e) {
+
+            if(e.type === "mousedown"){
+                origin.x = playBar1.getBoundingClientRect().left;
+                document.addEventListener("mouseup", mouseHand);
+                document.addEventListener("mousemove", mouseHand);
+
+            }else if(e.type === "mouseup"){
+                document.removeEventListener("mouseup",mouseHand);
+                document.removeEventListener("mousemove", mouseHand);
+
+            }else if(e.type === "mousemove"){
+
+                var endX = e.clientX - origin.x - bar2.offsetWidth/2;
+                if(endX <= 0){
+                    endX = 0;
+                }
+                if(endX >= (playBar1.offsetWidth-bar2.offsetWidth)){
+                    endX = playBar1.offsetWidth-bar2.offsetWidth;
+                }
+                var scaleX = endX/playBar1.offsetWidth;
+                myVideo.volume = scaleX*1;
+                bar1.style.width = scaleX*bar0.offsetWidth + "px";
+                if(bar1.offsetWidth <= 0){
+                    sound.style.backgroundPosition = "1px -69px";
+                    myVideo.muted = true;
+                }else {
+                    sound.style.backgroundPosition = "3px -50px";
+                    myVideo.muted = false;
+                }
+                bar2.style.left = endX + "px";
+            }
+
+            e.preventDefault();
+        }
+        /*
+        * 全屏
+        * */
+        screen.addEventListener("click", function () {
+            screenQ = !screenQ;
+            if(document.fullscreenElement){ // 全屏
+                screen.style.backgroundPosition = "1px -105px";
+                // W3C
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                //FireFox 火狐浏览器内核 -moz-
+                else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                }
+                // Chrome等 谷歌等浏览器内核 -webkit-
+                else if (document.webkitCancelFullScreen) {
+                    document.webkitCancelFullScreen();
+                }
+                //IE11
+                else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }else {
+                screen.style.backgroundPosition = "1px -87px";
+
+                var docElm = document.documentElement;
+                //W3C
+                if (docElm.requestFullscreen) {
+                    docElm.requestFullscreen();
+                }
+                //FireFox
+                else if (docElm.mozRequestFullScreen) {
+                    docElm.mozRequestFullScreen();
+                }
+                //Chrome等
+                else if (docElm.webkitRequestFullScreen) {
+                    docElm.webkitRequestFullScreen();
+                }
+                //IE11
+                else if (docElm.msRequestFullscreen) {
+                    docElm.msRequestFullscreen();
+                }
+            }
+        });
+        /*
+        * 格式化时间功能函数
+        * */
+        function formatTimes(time) {
+
+            var ms = parseInt(time);
+
+            var h = timeStrings(Math.floor(ms/3600));
+            var m = timeStrings(Math.floor(ms/60));
+            var s = timeStrings(Math.floor(ms));
+
+            return h + ":" + m + ":" + s;
+        }
+        /*
+        * 时间小于10时 加0拼串
+        * */
+        function timeStrings(t) {
+            var nums = "";
+            if(t < 10){
+                nums = "0" + t;
+            }else {
+                nums = t;
+            }
+            return nums;
+        }
+    }
+</script>
+</body>
+</html>
